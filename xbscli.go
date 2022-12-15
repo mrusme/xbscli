@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/mrusme/xbscli/lz77"
@@ -33,11 +34,13 @@ type BookmarksResponse struct {
 var serverURL string
 var syncID string
 var password string
+var format string
 
 func main() {
-	flag.StringVar(&serverURL, "s", "", "the server URL (required)")
-	flag.StringVar(&syncID, "i", "", "the sync ID (required)")
-	flag.StringVar(&password, "p", "", "the sync password (required)")
+	flag.StringVar(&serverURL, "s", "", "server URL (required)")
+	flag.StringVar(&syncID, "i", "", "sync ID (required)")
+	flag.StringVar(&password, "p", "", "sync password (required)")
+	flag.StringVar(&format, "f", "json", "format: json, pretty")
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
 		flag.PrintDefaults()
@@ -99,11 +102,30 @@ func main() {
 
 	bms := lz77.DecompressBlockToString(encdata)
 
-	var bookmarks []Bookmark
-	if err := json.Unmarshal([]byte(bms), &bookmarks); err != nil {
-		fmt.Print(err.Error())
-		os.Exit(1)
-	}
+	switch format {
+	case "json":
+		fmt.Printf("%s\n", bms)
+		os.Exit(0)
+	case "pretty":
+		var bookmarks []Bookmark
+		if err := json.Unmarshal([]byte(bms), &bookmarks); err != nil {
+			fmt.Print(err.Error())
+			os.Exit(1)
+		}
 
-	fmt.Printf("%+v\n", bookmarks)
+		printBookmarks(bookmarks, 0)
+		os.Exit(0)
+	}
+}
+
+func printBookmarks(bookmarks []Bookmark, level int) {
+	for _, bookmark := range bookmarks {
+		fmt.Printf("%s%s\n", strings.Repeat(" ", level), bookmark.Title)
+		if bookmark.Children != nil && len(bookmark.Children) > 0 {
+			printBookmarks(bookmark.Children, level+2)
+		} else {
+			fmt.Printf("%s%s\n", strings.Repeat(" ", level), bookmark.URL)
+			fmt.Println()
+		}
+	}
 }
