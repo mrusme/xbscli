@@ -1,14 +1,11 @@
-FROM golang:1.16-alpine
+FROM golang:1.19-alpine
 
 WORKDIR /app
 
-COPY go.mod ./
-COPY go.sum ./
+COPY . ./
+
 RUN go mod download
 
-COPY lz77/*.go ./lz77/
-COPY *.go ./
+RUN go build -o /xbscli
 
-RUN go build -o /xbscli-docker
-
-ENTRYPOINT ["/xbscli-docker", "-f", "-i", "-p", "-s"]
+ENTRYPOINT ["/xbscli", "-f", "-i", "-p", "-s"]
