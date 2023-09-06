@@ -115,6 +115,16 @@ func main() {
 
 		printBookmarks(bookmarks, 0)
 		os.Exit(0)
+	case "html":
+		var bookmarks []Bookmark
+		if err := json.Unmarshal([]byte(bms), &bookmarks); err != nil {
+			fmt.Print(err.Error())
+			os.Exit(1)
+		}
+		fmt.Println("<HTML><BODY>")
+		printBookmarksAsHTML(bookmarks)
+		fmt.Println("</BODY></HTML>")
+		os.Exit(0)
 	}
 }
 
@@ -126,6 +136,19 @@ func printBookmarks(bookmarks []Bookmark, level int) {
 		} else {
 			fmt.Printf("%s%s\n", strings.Repeat(" ", level), bookmark.URL)
 			fmt.Println()
+		}
+	}
+}
+func printBookmarksAsHTML(bookmarks []Bookmark) {
+	for _, bookmark := range bookmarks {
+		if bookmark.URL != "" {
+			fmt.Printf("<DT><A HREF=\"%s\">%s</A></DT>\n", bookmark.URL, bookmark.Title)
+		} else {
+			if bookmark.Children != nil && len(bookmark.Children) > 0 {
+				fmt.Printf("<DT><H3>%s</H3>\n<DL>\n", bookmark.Title)
+				printBookmarksAsHTML(bookmark.Children)
+				fmt.Printf("</DL></DT>\n")
+			}
 		}
 	}
 }
